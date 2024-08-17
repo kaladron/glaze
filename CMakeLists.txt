@@ -14,6 +14,11 @@ include(cmake/variables.cmake)
 add_library(glaze_glaze INTERFACE)
 add_library(glaze::glaze ALIAS glaze_glaze)
 
+add_library(glaze_module)
+target_sources(
+  glaze_module
+  PUBLIC FILE_SET CXX_MODULES FILES include/glaze/glaze.cppm
+)
 
 if (MSVC)
   string(REGEX MATCH "\/cl(.exe)?$" matched_cl ${CMAKE_CXX_COMPILER})
