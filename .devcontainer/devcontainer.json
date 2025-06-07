@@ -7,9 +7,9 @@
       // Update 'LLVM_VER' to pick clang version. Options: [10, 11, 12, 13, 14, 15, 16, 17]. Default: 17
       // Update 'USE_CLANG' to set clang as the default C and C++ compiler. Options: [1, null]. Default null
       "args": {
-         "VARIANT": "jammy",
+         "VARIANT": "noble",
          "GCC_VER": "13",
-         "LLVM_VER": "17",
+         "LLVM_VER": "20",
          "USE_CLANG": "1"
       }
    },

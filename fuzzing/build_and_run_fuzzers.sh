@@ -12,7 +12,7 @@ SCRIPTDIR=$(dirname "$0")
 
 builddir=build-fuzzer-clang
 
-cmake -B "$builddir" -S "$SCRIPTDIR/.." -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=Off -GNinja -DCMAKE_CXX_COMPILER=/usr/bin/clang++-17
+cmake -B "$builddir" -S "$SCRIPTDIR/.." -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=Off -GNinja -DCMAKE_CXX_COMPILER=/usr/bin/clang++-20
 cmake --build "$builddir"
 
 cd "$builddir"
