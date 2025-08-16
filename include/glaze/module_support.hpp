@@ -9,7 +9,9 @@
 #  define GLZ_BEGIN_EXPORT export
 #  define GLZ_END_EXPORT
 #  define GLZ_EXPORT export
+#define GLZ_STATIC
 #else
+#define GLZ_STATIC static
 #  define GLZ_MODULE_EXPORT
 #  define GLZ_BEGIN_EXPORT
 #  define GLZ_END_EXPORT
