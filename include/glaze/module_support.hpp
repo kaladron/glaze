@@ -4,17 +4,11 @@
 // This header enables the same code to work as both traditional headers and module content
 
 // Detect if we're building modules
-#ifdef GLAZE_MODULE_BUILD
-    // We're building the module interface
-    #define GLZ_MODULE_EXPORT export
-    #define GLZ_BEGIN_EXPORT export {
-    #define GLZ_END_EXPORT }
-#else
-    // Traditional header mode
-    #define GLZ_MODULE_EXPORT
-    #define GLZ_BEGIN_EXPORT
-    #define GLZ_END_EXPORT
-#endif
+// Keep export macros as no-ops for now to avoid exporting internal linkage
+// symbols accidentally. We can selectively add exports later.
+#define GLZ_MODULE_EXPORT
+#define GLZ_BEGIN_EXPORT
+#define GLZ_END_EXPORT
 
 // Deprecated/compatibility helpers (no-ops)
 // Most headers already use `#pragma once`, so guard helpers are unnecessary.
