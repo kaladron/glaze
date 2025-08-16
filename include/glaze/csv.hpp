@@ -11,3 +11,5 @@
 #  include "glaze/thread/atomic.hpp"
 #endif
  
+// Module-facing exports are defined directly in read.hpp when building modules.
+

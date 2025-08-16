@@ -850,6 +850,10 @@ namespace glz
       }
    };
 
+   // Export core CSV read APIs from the module interface
+   #ifdef GLAZE_MODULE_BUILD
+   GLZ_BEGIN_EXPORT
+   #endif
    template <uint32_t layout = rowwise, read_supported<CSV> T, class Buffer>
    [[nodiscard]] inline auto read_csv(T&& value, Buffer&& buffer)
    {
@@ -878,4 +882,7 @@ namespace glz
 
       return read<opts_csv{.layout = layout}>(value, buffer, ctx);
    }
+   #ifdef GLAZE_MODULE_BUILD
+   GLZ_END_EXPORT
+   #endif
 }
