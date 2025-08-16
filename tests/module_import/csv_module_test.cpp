@@ -27,7 +27,7 @@ int main()
       assert(ints[0] == 1);
    }
 
-   // 2) Quoted string with embedded comma and escaped quote (single field)
+   // 2) Test from main glaze testsuite to ensure this actually works
    {
       std::string input_row =
          R"(num1,11,33,55,77
