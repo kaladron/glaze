@@ -66,6 +66,20 @@ if(glaze_BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()
 
+# Optional: build C++20 module interface for CSV
+option(glaze_ENABLE_MODULES "Build C++ modules (Clang, CMake >= 3.28)" OFF)
+if(glaze_ENABLE_MODULES AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.28)
+  add_library(glaze.csv EXCLUDE_FROM_ALL)
+  add_library(glaze::csv ALIAS glaze.csv)
+  target_sources(glaze.csv
+    PUBLIC
+      FILE_SET cxx_modules TYPE CXX_MODULES FILES
+        src/glaze.csv.cppm
+  )
+  target_include_directories(glaze.csv PUBLIC ${PROJECT_SOURCE_DIR}/include)
+  target_compile_features(glaze.csv PUBLIC cxx_std_20)
+endif()
+
 option(glaze_EETF_FORMAT "Enable Erlang external term format parsing" OFF)
 
 if(glaze_EETF_FORMAT)

@@ -3,7 +3,10 @@
 
 #pragma once
 
-#include <charconv>
+#include "glaze/module_support.hpp"
+#ifndef GLAZE_MODULE_BUILD
+#  include <charconv>
+#endif
 
 #include "glaze/core/opts.hpp"
 #include "glaze/core/read.hpp"
