@@ -15,3 +15,14 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME})
 
 target_code_coverage(${PROJECT_NAME} AUTO ALL)
+
+# Minimal module import test for glaze.csv
+if(TARGET glaze.csv)
+  add_executable(csv_module_test csv_module_test.cpp)
+  target_compile_features(csv_module_test PRIVATE cxx_std_23)
+  target_link_libraries(csv_module_test PRIVATE glaze.csv)
+  set_property(TARGET csv_module_test PROPERTY CXX_SCAN_FOR_MODULES ON)
+  add_test(NAME csv_module_test COMMAND csv_module_test)
+else()
+  message(STATUS "Skipping csv_module_test: glaze.csv module target not available")
+endif()

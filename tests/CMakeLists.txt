@@ -83,7 +83,6 @@ add_subdirectory(json_reflection_test)
 add_subdirectory(json_test)
 
 add_subdirectory(networking_tests)
-add_subdirectory(module_import)
 
 if(glaze_EETF_FORMAT)
     add_subdirectory(eetf_test)
