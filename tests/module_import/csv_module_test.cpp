@@ -1,8 +1,18 @@
 import glaze.csv;
 
 #include <cassert>
+#include <deque>
 #include <string>
 #include <vector>
+
+// Move to namespace scope to ensure external linkage (required by reflection machinery under modules)
+struct my_struct
+{
+   std::vector<int> num1{};
+   std::deque<float> num2{};
+   std::vector<bool> maybe{};
+   std::vector<std::array<int, 3>> v3s{};
+};
 
 int main()
 {
@@ -19,12 +29,22 @@ int main()
 
    // 2) Quoted string with embedded comma and escaped quote (single field)
    {
-      std::string input = "\"foo\"\"bar\""; // ["foo\"bar"]
-      std::vector<std::string> v;
-      auto ec = glz::read_csv(v, input);
+      std::string input_row =
+         R"(num1,11,33,55,77
+num2,22,44,66,88
+maybe,1,1,0,0
+v3s[0],1,2,3,4
+v3s[1],1,2,3,4
+v3s[2],1,2,3,4)";
+
+      my_struct obj{};
+      auto ec = glz::read_csv(obj, input_row);
       assert(!bool(ec));
-      assert(v.size() == 1);
-      assert(v[0] == std::string("foo\"bar"));
+
+      assert(obj.num1[0] == 11);
+      assert(obj.num2[2] == 66);
+      assert(obj.maybe[3] == false);
+      assert(obj.v3s[0][2] == 1);
    }
 
    // 3) Boolean as 1

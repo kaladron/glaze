@@ -97,6 +97,9 @@
 #ifndef GLZ_FASTFLOAT_CONSTEXPR_FEATURE_DETECT_H
 #define GLZ_FASTFLOAT_CONSTEXPR_FEATURE_DETECT_H
 
+// Module visibility support (no-op for non-module builds)
+#include "glaze/module_support.hpp"
+
 #ifdef __has_include
 #if __has_include(<version>)
 #include <version>
@@ -1167,6 +1170,24 @@ template <typename UC> constexpr bool is_space(UC c) {
   return c < 256 && space_lut<>::value[uint8_t(c)];
 }
 
+// When building as a C++ module, 'export' must appear before 'template'.
+// Using the GLZ_EXPORT macro between 'template<...>' and the declaration is invalid.
+// Provide correctly-placed exports in module mode and plain templates otherwise.
+#ifdef GLAZE_MODULE_BUILD
+export template <typename UC> constexpr uint64_t int_cmp_zeros() {
+  static_assert((sizeof(UC) == 1) || (sizeof(UC) == 2) || (sizeof(UC) == 4),
+                "Unsupported character size");
+  return (sizeof(UC) == 1) ? 0x3030303030303030
+         : (sizeof(UC) == 2)
+             ? (uint64_t(UC('0')) << 48 | uint64_t(UC('0')) << 32 |
+                uint64_t(UC('0')) << 16 | UC('0'))
+             : (uint64_t(UC('0')) << 32 | UC('0'));
+}
+
+export template <typename UC> constexpr int int_cmp_len() {
+  return sizeof(uint64_t) / sizeof(UC);
+}
+#else
 template <typename UC> static constexpr uint64_t int_cmp_zeros() {
   static_assert((sizeof(UC) == 1) || (sizeof(UC) == 2) || (sizeof(UC) == 4),
                 "Unsupported character size");
@@ -1180,6 +1201,7 @@ template <typename UC> static constexpr uint64_t int_cmp_zeros() {
 template <typename UC> static constexpr int int_cmp_len() {
   return sizeof(uint64_t) / sizeof(UC);
 }
+#endif
 
 template <typename UC> constexpr UC const *str_const_nan();
 
