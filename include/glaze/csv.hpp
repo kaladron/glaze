@@ -6,10 +6,7 @@
 #include "glaze/module_support.hpp"
 
 #include "glaze/csv/read.hpp"
-#ifndef GLAZE_MODULE_BUILD
+#ifndef GLAZE_MODULE_BUILD // Not implemented yet.
 #  include "glaze/csv/write.hpp"
 #  include "glaze/thread/atomic.hpp"
 #endif
- 
-// Module-facing exports are defined directly in read.hpp when building modules.
-

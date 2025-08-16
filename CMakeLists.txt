@@ -83,7 +83,6 @@ if(glaze_BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()
 
-
 option(glaze_EETF_FORMAT "Enable Erlang external term format parsing" OFF)
 
 if(glaze_EETF_FORMAT)
