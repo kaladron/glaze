@@ -154,6 +154,7 @@
 #ifndef GLZ_FASTFLOAT_FLOAT_COMMON_H
 #define GLZ_FASTFLOAT_FLOAT_COMMON_H
 
+#ifndef GLAZE_MODULE_BUILD
 #include <cfloat>
 #include <cstdint>
 #include <cassert>
@@ -161,6 +162,7 @@
 #include <limits>
 #include <type_traits>
 #include <system_error>
+#endif
 #ifdef __has_include
 #if __has_include(<stdfloat>) && (__cplusplus > 202002L || (defined(_MSVC_LANG) && (_MSVC_LANG > 202002L)))
 #include <stdfloat>

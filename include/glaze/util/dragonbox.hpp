@@ -32,6 +32,7 @@
 // features used in this header. (The list can be found below.)
 #ifndef GLZ_JKJ_STD_REPLACEMENT_NAMESPACE
 #define GLZ_JKJ_STD_REPLACEMENT_NAMESPACE std
+#ifndef GLAZE_MODULE_BUILD
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -43,6 +44,7 @@
 #include <version>
 #endif
 #endif
+#endif // !GLAZE_MODULE_BUILD
 #else
 #define GLZ_JKJ_STD_REPLACEMENT_NAMESPACE_DEFINED 1
 #endif
