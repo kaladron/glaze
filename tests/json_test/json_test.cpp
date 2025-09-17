@@ -6294,6 +6294,47 @@ suite char_array = [] {
       s = R"("Hello WorldX")";
       expect(glz::read_json(arr, s) != glz::error_code::none);
    };
+
+   "char array with leading zero bug"_test = [] {
+      // Regression test for char array serialization bug similar to #1956
+      // When char foo[4] = {0, 0, 1, 0}, all data is lost due to checking *value.data()
+      char arr[4] = {0, 0, 1, 0};
+
+      std::string s{};
+      expect(not glz::write_json(arr, s));
+      
+      // BUG: Returns empty string instead of handling the array data properly
+      // The issue is in write.hpp line 563-564:
+      //   else if constexpr (array_char_t<T>) {
+      //       return *value.data() ? sv{value.data()} : "";
+      //   }
+      // When *value.data() is 0, it returns "" losing all data!
+      expect(s == R"("")"); // Current buggy behavior - all array data lost!
+      
+      // JSON spec note: [0, 0, 1, 0] could be validly represented as:
+      // - Array: [0,0,1,0] 
+      // - Escaped string: "\u0000\u0000\u0001\u0000"
+      // Current behavior (empty string) loses data and violates expectations
+   };
+
+   "char array comparison with int array"_test = [] {
+      // Show that int arrays work correctly with same data
+      int int_arr[4] = {0, 0, 1, 0};
+      char char_arr[4] = {0, 0, 1, 0};
+      
+      std::string int_result, char_result;
+      expect(not glz::write_json(int_arr, int_result));
+      expect(not glz::write_json(char_arr, char_result));
+      
+      // int array preserves all values as JSON array: [0,0,1,0]
+      expect(int_result == R"([0,0,1,0])");
+      
+      // char array loses all data when first element is zero  
+      expect(char_result == R"("")");
+      
+      // This inconsistency shows the bug - same logical data [0,0,1,0],
+      // but different serialization based solely on element type
+   };
 };
 
 struct nullable_keys
