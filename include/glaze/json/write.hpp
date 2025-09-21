@@ -560,8 +560,11 @@ namespace glz
                   if constexpr (!char_array_t<T> && std::is_pointer_v<std::decay_t<T>>) {
                      return value ? value : "";
                   }
+                  else if constexpr (char_array_t<T>) {
+                     return sv{value, sizeof(value)};
+                  }
                   else if constexpr (array_char_t<T>) {
-                     return *value.data() ? sv{value.data()} : "";
+                     return sv{value.data(), value.size()};
                   }
                   else {
                      return value;
@@ -666,8 +669,30 @@ namespace glz
                            }
                         }
                         else {
-                           std::memcpy(data, &char_escape_table[uint8_t(*c)], 2);
-                           data += 2;
+                           if (const auto escaped = char_escape_table[uint8_t(*c)]; escaped) {
+                              std::memcpy(data, &escaped, 2);
+                              data += 2;
+                           }
+                           else if (*c == '\0') {
+                              // Always escape null characters as \u0000
+                              char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
+                              std::memcpy(data, unicode_escape, 6);
+                              data += 6;
+                           }
+                           else if (uint8_t(*c) < 0x20) {
+                              // Always escape control characters as \uXXXX
+                              char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
+                              constexpr char hex_digits[] = "0123456789ABCDEF";
+                              unicode_escape[4] = hex_digits[(uint8_t(*c) >> 4) & 0xF];
+                              unicode_escape[5] = hex_digits[uint8_t(*c) & 0xF];
+                              std::memcpy(data, unicode_escape, 6);
+                              data += 6;
+                           }
+                           else {
+                              // Character detected as needing escape but not in table - should not happen
+                              std::memcpy(data, c, 1);
+                              ++data;
+                           }
                         }
                         ++c;
                      }
@@ -714,8 +739,30 @@ namespace glz
                            }
                         }
                         else {
-                           std::memcpy(data, &char_escape_table[uint8_t(*c)], 2);
-                           data += 2;
+                           if (const auto escaped = char_escape_table[uint8_t(*c)]; escaped) {
+                              std::memcpy(data, &escaped, 2);
+                              data += 2;
+                           }
+                           else if (*c == '\0') {
+                              // Always escape null characters as \u0000
+                              char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
+                              std::memcpy(data, unicode_escape, 6);
+                              data += 6;
+                           }
+                           else if (uint8_t(*c) < 0x20) {
+                              // Always escape control characters as \uXXXX
+                              char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
+                              constexpr char hex_digits[] = "0123456789ABCDEF";
+                              unicode_escape[4] = hex_digits[(uint8_t(*c) >> 4) & 0xF];
+                              unicode_escape[5] = hex_digits[uint8_t(*c) & 0xF];
+                              std::memcpy(data, unicode_escape, 6);
+                              data += 6;
+                           }
+                           else {
+                              // Character detected as needing escape but not in table - should not happen
+                              std::memcpy(data, c, 1);
+                              ++data;
+                           }
                         }
                         ++c;
                      }
@@ -726,6 +773,21 @@ namespace glz
                      if (const auto escaped = char_escape_table[uint8_t(*c)]; escaped) {
                         std::memcpy(data, &escaped, 2);
                         data += 2;
+                     }
+                     else if (*c == '\0') {
+                        // Always escape null characters in character arrays as \u0000
+                        char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
+                        std::memcpy(data, unicode_escape, 6);
+                        data += 6;
+                     }
+                     else if (uint8_t(*c) < 0x20) {
+                        // Always escape control characters in character arrays as \uXXXX
+                        char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
+                        constexpr char hex_digits[] = "0123456789ABCDEF";
+                        unicode_escape[4] = hex_digits[(uint8_t(*c) >> 4) & 0xF];
+                        unicode_escape[5] = hex_digits[uint8_t(*c) & 0xF];
+                        std::memcpy(data, unicode_escape, 6);
+                        data += 6;
                      }
                      else if constexpr (check_escape_control_characters(Opts)) {
                         if (uint8_t(*c) < 0x20) {

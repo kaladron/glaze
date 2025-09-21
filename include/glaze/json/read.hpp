@@ -1165,21 +1165,27 @@ namespace glz
          }
          else if constexpr (char_array_t<T>) {
             const size_t n = it - start;
-            if ((n + 1) > sizeof(value)) {
+            if (n > sizeof(value)) {
                ctx.error = error_code::unexpected_end;
                return;
             }
             std::memcpy(value, start, n);
-            value[n] = '\0';
+            // For character arrays, fill remaining space with zeros but don't add null terminator beyond array size
+            if (n < sizeof(value)) {
+               std::memset(value + n, 0, sizeof(value) - n);
+            }
          }
          else if constexpr (array_char_t<T>) {
             const size_t n = it - start;
-            if ((n + 1) > value.size()) {
+            if (n > value.size()) {
                ctx.error = error_code::unexpected_end;
                return;
             }
             std::memcpy(value.data(), start, n);
-            value[n] = '\0';
+            // For character arrays, fill remaining space with zeros but don't add null terminator beyond array size
+            if (n < value.size()) {
+               std::memset(value.data() + n, 0, value.size() - n);
+            }
          }
          else if constexpr (static_string_t<T>) {
             const size_t n = it - start;
