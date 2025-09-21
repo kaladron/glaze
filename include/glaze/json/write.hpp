@@ -560,11 +560,8 @@ namespace glz
                   if constexpr (!char_array_t<T> && std::is_pointer_v<std::decay_t<T>>) {
                      return value ? value : "";
                   }
-                  else if constexpr (char_array_t<T>) {
-                     return sv{value, sizeof(value)};
-                  }
                   else if constexpr (array_char_t<T>) {
-                     return sv{value.data(), value.size()};
+                     return *value.data() ? sv{value.data()} : "";
                   }
                   else {
                      return value;
@@ -669,30 +666,8 @@ namespace glz
                            }
                         }
                         else {
-                           if (const auto escaped = char_escape_table[uint8_t(*c)]; escaped) {
-                              std::memcpy(data, &escaped, 2);
-                              data += 2;
-                           }
-                           else if (*c == '\0') {
-                              // Always escape null characters as \u0000
-                              char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
-                              std::memcpy(data, unicode_escape, 6);
-                              data += 6;
-                           }
-                           else if (uint8_t(*c) < 0x20) {
-                              // Always escape control characters as \uXXXX
-                              char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
-                              constexpr char hex_digits[] = "0123456789ABCDEF";
-                              unicode_escape[4] = hex_digits[(uint8_t(*c) >> 4) & 0xF];
-                              unicode_escape[5] = hex_digits[uint8_t(*c) & 0xF];
-                              std::memcpy(data, unicode_escape, 6);
-                              data += 6;
-                           }
-                           else {
-                              // Character detected as needing escape but not in table - should not happen
-                              std::memcpy(data, c, 1);
-                              ++data;
-                           }
+                           std::memcpy(data, &char_escape_table[uint8_t(*c)], 2);
+                           data += 2;
                         }
                         ++c;
                      }
@@ -739,30 +714,8 @@ namespace glz
                            }
                         }
                         else {
-                           if (const auto escaped = char_escape_table[uint8_t(*c)]; escaped) {
-                              std::memcpy(data, &escaped, 2);
-                              data += 2;
-                           }
-                           else if (*c == '\0') {
-                              // Always escape null characters as \u0000
-                              char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
-                              std::memcpy(data, unicode_escape, 6);
-                              data += 6;
-                           }
-                           else if (uint8_t(*c) < 0x20) {
-                              // Always escape control characters as \uXXXX
-                              char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
-                              constexpr char hex_digits[] = "0123456789ABCDEF";
-                              unicode_escape[4] = hex_digits[(uint8_t(*c) >> 4) & 0xF];
-                              unicode_escape[5] = hex_digits[uint8_t(*c) & 0xF];
-                              std::memcpy(data, unicode_escape, 6);
-                              data += 6;
-                           }
-                           else {
-                              // Character detected as needing escape but not in table - should not happen
-                              std::memcpy(data, c, 1);
-                              ++data;
-                           }
+                           std::memcpy(data, &char_escape_table[uint8_t(*c)], 2);
+                           data += 2;
                         }
                         ++c;
                      }
@@ -773,21 +726,6 @@ namespace glz
                      if (const auto escaped = char_escape_table[uint8_t(*c)]; escaped) {
                         std::memcpy(data, &escaped, 2);
                         data += 2;
-                     }
-                     else if (*c == '\0') {
-                        // Always escape null characters in character arrays as \u0000
-                        char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
-                        std::memcpy(data, unicode_escape, 6);
-                        data += 6;
-                     }
-                     else if (uint8_t(*c) < 0x20) {
-                        // Always escape control characters in character arrays as \uXXXX
-                        char unicode_escape[6] = {'\\', 'u', '0', '0', '0', '0'};
-                        constexpr char hex_digits[] = "0123456789ABCDEF";
-                        unicode_escape[4] = hex_digits[(uint8_t(*c) >> 4) & 0xF];
-                        unicode_escape[5] = hex_digits[uint8_t(*c) & 0xF];
-                        std::memcpy(data, unicode_escape, 6);
-                        data += 6;
                      }
                      else if constexpr (check_escape_control_characters(Opts)) {
                         if (uint8_t(*c) < 0x20) {
@@ -1525,6 +1463,40 @@ namespace glz
             dump_newline_indent<Opts.indentation_char>(ctx.indentation_level, args...);
          }
          dump<']'>(args...);
+      }
+   };
+
+   // Specialization for byte_array wrapper to treat character arrays as fixed-size byte arrays
+   template <class T>
+      requires (is_byte_array<T> && !glaze_object_t<T> && !reflectable<T>)
+   struct to<JSON, T>
+   {
+      template <auto Opts, class... Args>
+      static void op(auto&& wrapper, is_context auto&& ctx, Args&&... args)
+      {
+         auto& value = wrapper.val;
+         
+         // Treat as fixed-size byte array - serialize all bytes
+         using char_t = std::remove_extent_t<std::remove_reference_t<decltype(value)>>;
+         constexpr size_t N = sizeof(value) / sizeof(char_t);
+         
+         std::string_view sv_data{reinterpret_cast<const char*>(&value), N};
+         
+         // Create custom options that force control character escaping
+         constexpr auto byte_array_opts = []() {
+            if constexpr (requires { Opts.escape_control_characters; }) {
+               return Opts;  // Use existing options if they already have the field
+            } else {
+               // Create new options with escape_control_characters = true
+               struct byte_opts : decltype(Opts) {
+                  bool escape_control_characters = true;
+               };
+               return byte_opts{};
+            }
+         }();
+         
+         // Use the same string serialization logic but with control character escaping
+         to<JSON, std::string_view>::template op<byte_array_opts>(sv_data, ctx, args...);
       }
    };
 

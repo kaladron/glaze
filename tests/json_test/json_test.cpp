@@ -11718,8 +11718,8 @@ suite glaze_error_category_tests = [] {
 };
 
 suite char_array_tests = [] {
-   "char array with null bytes"_test = [] {
-      // Test case from issue #1959
+   "char array with null bytes - traditional behavior"_test = [] {
+      // Traditional char array behavior (unchanged)
       char arr[4] = {0, 0, 1, 0};
       
       std::string json_output;
@@ -11727,41 +11727,73 @@ suite char_array_tests = [] {
       
       expect(!result) << "Failed to write JSON: " << glz::format_error(result, json_output);
       
-      // Should serialize all bytes including nulls
-      // The current implementation incorrectly outputs: ""
-      // The correct output should be: "\u0000\u0000\u0001\u0000"
+      // Traditional behavior: treated as null-terminated string, so stops at first null
+      expect(json_output == "\"\"") << "Got: " << json_output;
+   };
+   
+   "byte_array wrapper for fixed-size serialization"_test = [] {
+      // NEW: byte_array wrapper for fixed-size byte array behavior
+      char arr[4] = {0, 0, 1, 0};
+      auto wrapped = glz::byte_array{arr};
+      
+      std::string json_output;
+      auto result = glz::write_json(wrapped, json_output);
+      
+      expect(!result) << "Failed to write JSON: " << glz::format_error(result, json_output);
+      
+      // NEW behavior: all bytes serialized with proper escaping
       expect(json_output == "\"\\u0000\\u0000\\u0001\\u0000\"") << "Got: " << json_output;
    };
    
-   "char array all nulls"_test = [] {
+   "byte_array all nulls"_test = [] {
       char arr[3] = {0, 0, 0};
+      auto wrapped = glz::byte_array{arr};
       
       std::string json_output;
-      auto result = glz::write_json(arr, json_output);
+      auto result = glz::write_json(wrapped, json_output);
       
       expect(!result);
       expect(json_output == "\"\\u0000\\u0000\\u0000\"") << "Got: " << json_output;
    };
    
-   "char array no nulls"_test = [] {
+   "byte_array no nulls"_test = [] {
       char arr[5] = {'h', 'e', 'l', 'l', 'o'};
+      auto wrapped = glz::byte_array{arr};
       
       std::string json_output;
-      auto result = glz::write_json(arr, json_output);
+      auto result = glz::write_json(wrapped, json_output);
       
       expect(!result);
       expect(json_output == "\"hello\"") << "Got: " << json_output;
    };
    
-   "char array mixed characters"_test = [] {
+   "byte_array mixed characters"_test = [] {
       char arr[6] = {'a', 0, 'b', '\n', 'c', '"'};
+      auto wrapped = glz::byte_array{arr};
       
       std::string json_output;
-      auto result = glz::write_json(arr, json_output);
+      auto result = glz::write_json(wrapped, json_output);
       
       expect(!result);
       // Should properly escape null, newline, and quote characters
       expect(json_output == "\"a\\u0000b\\nc\\\"\"") << "Got: " << json_output;
+   };
+   
+   "byte_array round-trip"_test = [] {
+      char original[4] = {5, 0, static_cast<char>(200), 1};
+      auto wrapped_original = glz::byte_array{original};
+      
+      std::string json_output;
+      auto write_result = glz::write_json(wrapped_original, json_output);
+      expect(!write_result) << "Write failed: " << glz::format_error(write_result, json_output);
+      
+      char read_back[4] = {0};
+      auto wrapped_read = glz::byte_array{read_back};
+      auto read_result = glz::read_json(wrapped_read, json_output);
+      expect(!read_result) << "Read failed: " << glz::format_error(read_result, json_output);
+      
+      bool arrays_equal = std::memcmp(original, read_back, 4) == 0;
+      expect(arrays_equal) << "Round-trip failed";
    };
 };
 
